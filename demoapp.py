@@ -9,6 +9,12 @@ import random
 from zeroentropy import ZeroEntropy
 
 PREDEFINED_CORPORA = {
+    "maud": {
+        "name": "MAUD",
+        "description": "MAUD: Merger Agreement Understanding Dataset",
+        "corups_url": "https://www.dropbox.com/scl/fo/r7xfa5i3hdsbxex1w6amw/ALwI_ohLY7KCg7veDdHdAb8/corpus/maud?dl=0&rlkey=5n8zrbk4c08lbit3iiexofmwg&subfolder_nav_tracking=1&dl=1",
+        "queries_url": "https://www.dropbox.com/scl/fo/r7xfa5i3hdsbxex1w6amw/APO2GVe0eOLUG5Hm9Rdoa5Q/benchmarks/maud.json?rlkey=5n8zrbk4c08lbit3iiexofmwg&dl=1",
+    },
     "contractnli": {
         "name": "ContractNLI",
         "description": "ContractNLI: Legal Contract Natural Language Inference Dataset",
@@ -20,12 +26,6 @@ PREDEFINED_CORPORA = {
         "description": "CUAD: Contract Understanding Atticus Dataset",
         "corups_url": "https://www.dropbox.com/scl/fo/r7xfa5i3hdsbxex1w6amw/AL0guPQHmsmOjJerxZDEk_4/corpus/cuad?dl=0&rlkey=5n8zrbk4c08lbit3iiexofmwg&subfolder_nav_tracking=1&dl=1",
         "queries_url": "https://www.dropbox.com/scl/fo/r7xfa5i3hdsbxex1w6amw/AOokCanBJ5IHk5TEMP699YE/benchmarks/cuad.json?rlkey=5n8zrbk4c08lbit3iiexofmwg&dl=1",
-    },
-    "maud": {
-        "name": "MAUD",
-        "description": "MAUD: Merger Agreement Understanding Dataset",
-        "corups_url": "https://www.dropbox.com/scl/fo/r7xfa5i3hdsbxex1w6amw/ALwI_ohLY7KCg7veDdHdAb8/corpus/maud?dl=0&rlkey=5n8zrbk4c08lbit3iiexofmwg&subfolder_nav_tracking=1&dl=1",
-        "queries_url": "https://www.dropbox.com/scl/fo/r7xfa5i3hdsbxex1w6amw/APO2GVe0eOLUG5Hm9Rdoa5Q/benchmarks/maud.json?rlkey=5n8zrbk4c08lbit3iiexofmwg&dl=1",
     },
     "privacy_qa": {
         "name": "PrivacyQA",
@@ -61,17 +61,14 @@ def download_corpus(url: str, temp_dir: str, corpus_name: str) -> list[dict]:
     response = requests.get(url)
     response.raise_for_status()
 
-    # Save to temp file
     zip_path = os.path.join(temp_dir, "corpus.zip")
     with open(zip_path, "wb") as f:
         f.write(response.content)
 
-    # Extract and read documents
     documents = []
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(temp_dir)
 
-        # Find and read text files
         for root, dirs, files in os.walk(temp_dir):
             for file in files:
                 if file.endswith((".txt", ".json")):
@@ -111,7 +108,6 @@ def check_corpus_indexed(
 ) -> tuple[bool, int, int]:
     """Check if corpus documents are indexed in the collection"""
     try:
-        # Get all documents in collection with the corpus prefix
         doc_list = client.documents.get_info_list(
             collection_name=collection_name, path_prefix=f"{corpus_name}_"
         )
@@ -130,7 +126,6 @@ def check_corpus_indexed(
 def highlight_answer_in_content(content: str, expected_answer: str) -> str:
     """Highlight expected answer in content if found"""
     if expected_answer.lower() in content.lower():
-        # Find the answer (case insensitive) and highlight it
         start_idx = content.lower().find(expected_answer.lower())
         if start_idx != -1:
             end_idx = start_idx + len(expected_answer)
@@ -162,11 +157,9 @@ def count_tokens(text: str) -> int:
     return len(text.split())
 
 
-# --- Streamlit App ---
 def main():
     st.set_page_config(page_title="ZeroEntropy Demo", page_icon="⚡", layout="wide")
 
-    # --- API Key and Tracker ---
     api_key = st.query_params.get("api_key")
 
     if api_key:
@@ -176,10 +169,8 @@ def main():
             f'<img src="{tracking_url}" width="1" height="1">', unsafe_allow_html=True
         )
 
-    # --- App Header ---
     st.title("⚡ ZeroEntropy: Advanced RAG-as-a-Service Demo")
 
-    # --- Fast is Fun Message ---
     st.success(
         "🚀 **Deploy RAG services INSTANTLY for your apps!** ⚡ It's FAST, and **FAST IS FUN** - so HAVE FUN! 🎉"
     )
@@ -187,7 +178,6 @@ def main():
         "💡 **Each section below shows the actual SDK code** - see how incredibly easy it is to build powerful RAG applications!"
     )
 
-    # --- API Key Check ---
     final_api_key = api_key
 
     if not api_key:
@@ -196,7 +186,6 @@ def main():
             "Please provide your API key in the URL. Example: `.../?api_key=YOUR_API_KEY_HERE`"
         )
 
-        # Allow user to input their own API key
         st.markdown("---")
         st.subheader("🔑 Use Your Own API Key")
         st.info("""
@@ -221,7 +210,6 @@ def main():
     else:
         st.success(f"✅ API Key Loaded from URL: `{api_key[:4]}...{api_key[-4:]}`")
 
-        # Option to use own API key even when URL key is provided
         with st.expander("🔑 Use Your Own API Key Instead"):
             st.info("""
             **Want to use your own API key?** 
@@ -249,13 +237,11 @@ def main():
                     f"✅ Using Your API Key: `{final_api_key[:4]}...{final_api_key[-4:]}`"
                 )
 
-    # Display current active API key
     if final_api_key != api_key and final_api_key:
         st.success(
             f"✅ Using Your API Key: `{final_api_key[:4]}...{final_api_key[-4:]}`"
         )
 
-    # Initialize client
     try:
         client = ZeroEntropy(api_key=final_api_key)
     except Exception as e:
@@ -265,7 +251,6 @@ def main():
     # --- Step 1: Collection Management ---
     st.header("📂 Step 1: Collection Setup")
 
-    # SDK Code Example
     with st.expander("👨‍💻 **Show SDK Code** - How Easy Is This?"):
         st.code(
             """
@@ -293,7 +278,6 @@ except Exception as e:
     with st.spinner("Fetching existing collections from API..."):
         existing_collections = fetch_existing_collections(client)
 
-    # Collection selection interface
     if existing_collections:
         st.success(f"✅ Found {len(existing_collections)} existing collections")
 
@@ -325,7 +309,6 @@ except Exception as e:
             help="Enter a name for your collection",
         )
 
-    # Collection action button
     col1, col2 = st.columns([3, 1])
 
     with col1:
@@ -352,10 +335,8 @@ except Exception as e:
             else:
                 st.error(message)
 
-    # Display success message if it exists in session state
     if "setup_success_message" in st.session_state:
         st.success(st.session_state.setup_success_message)
-        # Remove the message after displaying it once
         del st.session_state.setup_success_message
 
     # --- Step 2: Corpus Selection ---
@@ -363,12 +344,9 @@ except Exception as e:
         st.header("📂 Step 2: Corpus Selection")
         collection_name = st.session_state.selected_collection
 
-        # Display current collection
         st.info(f"📂 **Current Collection:** `{collection_name}`")
 
-        # Verify collection exists before proceeding
         try:
-            # Test if collection exists by trying to get its info
             existing_collections = fetch_existing_collections(client)
             collection_exists = collection_name in existing_collections
         except Exception as e:
@@ -380,7 +358,6 @@ except Exception as e:
                 f"❌ Collection '{collection_name}' not found. Please complete Step 1 first."
             )
         else:
-            # Corpus selection dropdown
             selected_corpus = st.selectbox(
                 "Select a corpus:",
                 options=list(PREDEFINED_CORPORA.keys()),
@@ -391,7 +368,6 @@ except Exception as e:
             corpus_info = PREDEFINED_CORPORA[selected_corpus]
             st.info(f"**{corpus_info['name']}**: {corpus_info['description']}")
 
-            # Check if this corpus is indexed
             corpus_indexed, indexed_count, total_count = check_corpus_indexed(
                 client, collection_name, selected_corpus
             )
@@ -426,10 +402,8 @@ except Exception as e:
                     type="primary",
                     use_container_width=True,
                 ):
-                    # Start immediate download and indexing
                     corpus_info = PREDEFINED_CORPORA[selected_corpus]
 
-                    # Download corpus
                     download_start_time = time.time()
                     with st.spinner("📥 Downloading corpus..."):
                         try:
@@ -496,10 +470,10 @@ except Exception as e:
                     monitoring_start_time = time.time()
 
                     status_container = st.container()
-                    progress_container = st.container()
+                    progress_placeholder = st.empty()
 
                     max_wait_time = 120
-                    check_interval = 3
+                    check_interval = 5
 
                     while True:
                         elapsed_time = time.time() - monitoring_start_time
@@ -525,164 +499,26 @@ except Exception as e:
                                         total_time - download_time - upload_time
                                     )
 
-                                    # Clear progress container
-                                    progress_container.empty()
+                                    progress_placeholder.empty()
 
                                     st.success(
                                         f"🎉 **Indexing Complete!** All {total_count} documents indexed successfully"
                                     )
 
-                                    # Performance showcase header
-                                    st.subheader(
-                                        "⚡ **LIGHTNING-FAST PERFORMANCE STATS**"
-                                    )
-                                    st.markdown("---")
-
-                                    # Main timing metrics
-                                    col1, col2, col3, col4 = st.columns(4)
-                                    with col1:
-                                        st.metric(
-                                            "📥 Download Time",
-                                            f"{download_time:.2f}s",
-                                            help="Time to download corpus from URL",
-                                        )
-                                    with col2:
-                                        st.metric(
-                                            "📤 Upload Time",
-                                            f"{upload_time:.2f}s",
-                                            help="Time to send documents to ZeroEntropy API",
-                                        )
-                                    with col3:
-                                        st.metric(
-                                            "⚡ Indexing Time",
-                                            f"{indexing_time:.2f}s",
-                                            help="Time for ZeroEntropy to process and index documents",
-                                        )
-                                    with col4:
-                                        st.metric(
-                                            "🏁 Total Time",
-                                            f"{total_time:.2f}s",
-                                            help="Complete end-to-end time",
-                                        )
-
-                                    st.markdown("---")
-
-                                    # Speed metrics
-                                    col1, col2, col3, col4 = st.columns(4)
-                                    with col1:
-                                        docs_per_sec = total_count / total_time
-                                        st.metric(
-                                            "📄 Documents/sec",
-                                            f"{docs_per_sec:.1f}",
-                                            help="Documents processed per second (end-to-end)",
-                                        )
-                                    with col2:
-                                        tokens_per_sec = total_tokens / total_time
-                                        st.metric(
-                                            "🔤 Tokens/sec",
-                                            f"{tokens_per_sec:.0f}",
-                                            help="Tokens processed per second (end-to-end)",
-                                        )
-                                    with col3:
-                                        if indexing_time > 0:
-                                            indexing_docs_per_sec = (
-                                                total_count / indexing_time
-                                            )
-                                            st.metric(
-                                                "⚡ Pure Index Rate",
-                                                f"{indexing_docs_per_sec:.1f} docs/s",
-                                                help="ZeroEntropy indexing speed (excluding download/upload)",
-                                            )
-                                        else:
-                                            st.metric(
-                                                "⚡ Pure Index Rate",
-                                                "Instant!",
-                                                help="Indexing was incredibly fast!",
-                                            )
-                                    with col4:
-                                        avg_doc_size = (
-                                            total_tokens / total_count
-                                            if total_count > 0
-                                            else 0
-                                        )
-                                        st.metric(
-                                            "📊 Avg Doc Size",
-                                            f"{avg_doc_size:.0f} tokens",
-                                            help="Average document size",
-                                        )
-
-                                    # Performance breakdown chart data
-                                    st.markdown("---")
-                                    st.subheader("📈 **Time Breakdown**")
-
-                                    # Create performance breakdown
-                                    breakdown_data = {
-                                        "Phase": ["Download", "Upload", "Indexing"],
-                                        "Time (s)": [
-                                            download_time,
-                                            upload_time,
-                                            indexing_time,
-                                        ],
-                                        "Percentage": [
-                                            (download_time / total_time) * 100,
-                                            (upload_time / total_time) * 100,
-                                            (indexing_time / total_time) * 100,
-                                        ],
+                                    st.session_state.performance_stats = {
+                                        'total_time': total_time,
+                                        'download_time': download_time,
+                                        'upload_time': upload_time,
+                                        'indexing_time': indexing_time,
+                                        'total_count': total_count,
+                                        'total_tokens': total_tokens,
                                     }
 
-                                    col1, col2 = st.columns(2)
-                                    with col1:
-                                        for i, phase in enumerate(
-                                            breakdown_data["Phase"]
-                                        ):
-                                            pct = breakdown_data["Percentage"][i]
-                                            time_val = breakdown_data["Time (s)"][i]
-                                            st.write(
-                                                f"**{phase}**: {time_val:.2f}s ({pct:.1f}%)"
-                                            )
-
-                                    with col2:
-                                        # Speed comparison
-                                        st.write("**🚀 Speed Highlights:**")
-                                        if docs_per_sec > 10:
-                                            st.write(
-                                                f"• 🔥 **{docs_per_sec:.1f} docs/sec** - BLAZING FAST!"
-                                            )
-                                        elif docs_per_sec > 5:
-                                            st.write(
-                                                f"• ⚡ **{docs_per_sec:.1f} docs/sec** - Lightning speed!"
-                                            )
-                                        else:
-                                            st.write(
-                                                f"• 🏃‍♂️ **{docs_per_sec:.1f} docs/sec** - Speedy!"
-                                            )
-
-                                        if tokens_per_sec > 50000:
-                                            st.write(
-                                                f"• 🔥 **{tokens_per_sec:,.0f} tokens/sec** - INCREDIBLE!"
-                                            )
-                                        elif tokens_per_sec > 10000:
-                                            st.write(
-                                                f"• ⚡ **{tokens_per_sec:,.0f} tokens/sec** - Super fast!"
-                                            )
-                                        else:
-                                            st.write(
-                                                f"• 🏃‍♂️ **{tokens_per_sec:,.0f} tokens/sec** - Efficient!"
-                                            )
-
-                                    # Fun facts
-                                    st.markdown("---")
-                                    st.info(f"""
-                                    🎯 **Performance Summary**: Processed **{total_count:,} documents** with **{total_tokens:,} tokens** 
-                                    in just **{total_time:.2f} seconds**! 
-                                    
-                                    🚀 **That's FAST!** ZeroEntropy indexed your entire corpus faster than you can read this message!
-                                    """)
 
                                     st.session_state.selected_corpus = selected_corpus
                                     break
                                 else:
-                                    with progress_container:
+                                    with progress_placeholder.container():
                                         if total_count > 0:
                                             progress_pct = indexed_count / total_count
                                             st.progress(progress_pct)
@@ -739,6 +575,86 @@ except Exception as e:
                 )
         else:
             st.header("🔍 Step 3: Query & Results")
+            
+            if "performance_stats" in st.session_state:
+                stats = st.session_state.performance_stats
+                
+                st.subheader("🎉 **INDEXING COMPLETED** - Lightning-Fast Performance Stats!")
+                st.markdown("---")
+                
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    st.metric(
+                        "📥 Download Time",
+                        f"{stats['download_time']:.2f}s",
+                        help="Time to download corpus from URL",
+                    )
+                with col2:
+                    st.metric(
+                        "📤 Upload Time", 
+                        f"{stats['upload_time']:.2f}s",
+                        help="Time to send documents to ZeroEntropy API",
+                    )
+                with col3:
+                    st.metric(
+                        "⚡ Indexing Time",
+                        f"{stats['indexing_time']:.2f}s",
+                        help="Time for ZeroEntropy to process and index documents",
+                    )
+                with col4:
+                    st.metric(
+                        "🏁 Total Time",
+                        f"{stats['total_time']:.2f}s",
+                        help="Complete end-to-end time",
+                    )
+
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    docs_per_sec = stats['total_count'] / stats['total_time']
+                    st.metric(
+                        "📄 Documents/sec",
+                        f"{docs_per_sec:.1f}",
+                        help="Documents processed per second (end-to-end)",
+                    )
+                with col2:
+                    tokens_per_sec = stats['total_tokens'] / stats['total_time']
+                    st.metric(
+                        "🔤 Tokens/sec",
+                        f"{tokens_per_sec:.0f}",
+                        help="Tokens processed per second (end-to-end)",
+                    )
+                with col3:
+                    if stats['indexing_time'] > 0:
+                        indexing_docs_per_sec = stats['total_count'] / stats['indexing_time']
+                        st.metric(
+                            "⚡ Pure Index Rate",
+                            f"{indexing_docs_per_sec:.1f} docs/s",
+                            help="ZeroEntropy indexing speed (excluding download/upload)",
+                        )
+                    else:
+                        st.metric(
+                            "⚡ Pure Index Rate",
+                            "Instant!",
+                            help="Indexing was incredibly fast!",
+                        )
+                with col4:
+                    avg_doc_size = stats['total_tokens'] / stats['total_count'] if stats['total_count'] > 0 else 0
+                    st.metric(
+                        "📊 Avg Doc Size",
+                        f"{avg_doc_size:.0f} tokens",
+                        help="Average document size",
+                    )
+
+                st.markdown("---")
+                st.success(f"""
+                🎯 **Performance Summary**: Processed **{stats['total_count']:,} documents** with **{stats['total_tokens']:,} tokens** 
+                in just **{stats['total_time']:.2f} seconds**! 
+                
+                🚀 **That's FAST!** ZeroEntropy indexed your entire corpus faster than you can read this message!
+                """)
+                
+                del st.session_state.performance_stats
+                st.markdown("---")
 
             corpus_info = PREDEFINED_CORPORA[selected_corpus_key]
 
@@ -848,7 +764,6 @@ for result in response.results:
                         if response and response.results:
                             results = response.results
 
-                            # Get expected answers for highlighting
                             expected_answers = []
                             for snippet in expected_snippets:
                                 if "answer" in snippet:
@@ -867,7 +782,6 @@ for result in response.results:
                                 ):
                                     content = item.content
 
-                                    # Highlight expected answers
                                     highlighted_content = content
                                     found_answers = []
                                     for answer in expected_answers:
@@ -908,7 +822,6 @@ for result in response.results:
                 else:
                     st.warning("⚠️ No expected answers found in results")
 
-    # --- Feedback ---
     st.header("💬 Feedback")
 
     col1, col2 = st.columns(2)
