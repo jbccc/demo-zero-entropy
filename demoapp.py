@@ -114,7 +114,9 @@ def check_corpus_indexed(
 
         total_docs = len(doc_list.documents)
         indexed_docs = sum(
-            1 for doc in doc_list.documents if doc.index_status == "indexed"
+            1
+            for doc in doc_list.documents
+            if doc.index_status not in ["parsing", "indexing"]
         )
 
         return total_docs > 0, indexed_docs, total_docs
@@ -506,14 +508,13 @@ except Exception as e:
                                     )
 
                                     st.session_state.performance_stats = {
-                                        'total_time': total_time,
-                                        'download_time': download_time,
-                                        'upload_time': upload_time,
-                                        'indexing_time': indexing_time,
-                                        'total_count': total_count,
-                                        'total_tokens': total_tokens,
+                                        "total_time": total_time,
+                                        "download_time": download_time,
+                                        "upload_time": upload_time,
+                                        "indexing_time": indexing_time,
+                                        "total_count": total_count,
+                                        "total_tokens": total_tokens,
                                     }
-
 
                                     st.session_state.selected_corpus = selected_corpus
                                     break
@@ -575,13 +576,15 @@ except Exception as e:
                 )
         else:
             st.header("🔍 Step 3: Query & Results")
-            
+
             if "performance_stats" in st.session_state:
                 stats = st.session_state.performance_stats
-                
-                st.subheader("🎉 **INDEXING COMPLETED** - Lightning-Fast Performance Stats!")
+
+                st.subheader(
+                    "🎉 **INDEXING COMPLETED** - Lightning-Fast Performance Stats!"
+                )
                 st.markdown("---")
-                
+
                 col1, col2, col3, col4 = st.columns(4)
                 with col1:
                     st.metric(
@@ -591,7 +594,7 @@ except Exception as e:
                     )
                 with col2:
                     st.metric(
-                        "📤 Upload Time", 
+                        "📤 Upload Time",
                         f"{stats['upload_time']:.2f}s",
                         help="Time to send documents to ZeroEntropy API",
                     )
@@ -610,22 +613,24 @@ except Exception as e:
 
                 col1, col2, col3, col4 = st.columns(4)
                 with col1:
-                    docs_per_sec = stats['total_count'] / stats['total_time']
+                    docs_per_sec = stats["total_count"] / stats["total_time"]
                     st.metric(
                         "📄 Documents/sec",
                         f"{docs_per_sec:.1f}",
                         help="Documents processed per second (end-to-end)",
                     )
                 with col2:
-                    tokens_per_sec = stats['total_tokens'] / stats['total_time']
+                    tokens_per_sec = stats["total_tokens"] / stats["total_time"]
                     st.metric(
                         "🔤 Tokens/sec",
                         f"{tokens_per_sec:.0f}",
                         help="Tokens processed per second (end-to-end)",
                     )
                 with col3:
-                    if stats['indexing_time'] > 0:
-                        indexing_docs_per_sec = stats['total_count'] / stats['indexing_time']
+                    if stats["indexing_time"] > 0:
+                        indexing_docs_per_sec = (
+                            stats["total_count"] / stats["indexing_time"]
+                        )
                         st.metric(
                             "⚡ Pure Index Rate",
                             f"{indexing_docs_per_sec:.1f} docs/s",
@@ -638,7 +643,11 @@ except Exception as e:
                             help="Indexing was incredibly fast!",
                         )
                 with col4:
-                    avg_doc_size = stats['total_tokens'] / stats['total_count'] if stats['total_count'] > 0 else 0
+                    avg_doc_size = (
+                        stats["total_tokens"] / stats["total_count"]
+                        if stats["total_count"] > 0
+                        else 0
+                    )
                     st.metric(
                         "📊 Avg Doc Size",
                         f"{avg_doc_size:.0f} tokens",
@@ -647,12 +656,12 @@ except Exception as e:
 
                 st.markdown("---")
                 st.success(f"""
-                🎯 **Performance Summary**: Processed **{stats['total_count']:,} documents** with **{stats['total_tokens']:,} tokens** 
-                in just **{stats['total_time']:.2f} seconds**! 
+                🎯 **Performance Summary**: Processed **{stats["total_count"]:,} documents** with **{stats["total_tokens"]:,} tokens** 
+                in just **{stats["total_time"]:.2f} seconds**! 
                 
                 🚀 **That's FAST!** ZeroEntropy indexed your entire corpus faster than you can read this message!
                 """)
-                
+
                 del st.session_state.performance_stats
                 st.markdown("---")
 
