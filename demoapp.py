@@ -472,7 +472,7 @@ except Exception as e:
                     status_container = st.container()
                     progress_placeholder = st.empty()
 
-                    max_wait_time = 120
+                    max_wait_time = 600
                     check_interval = 5
 
                     while True:
